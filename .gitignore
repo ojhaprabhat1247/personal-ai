@@ -1,0 +1,32 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+
+# Virtual Environment
+.venv/
+venv/
+
+# Environment Variables
+.env
+
+# VS Code
+.vscode/
+
+# Chroma Database
+data/chroma/
+
+# Local User Data
+data/memory.json
+data/profile.json
+
+# Uploaded Files
+uploads/
+
+# Logs
+*.log
+
+# Operating System Files
+.DS_Store
+Thumbs.db
