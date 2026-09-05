@@ -32,17 +32,23 @@ class DocumentEventHandler(FileSystemEventHandler):
             f"{event.src_path}"
         )
 
-        result = self.ingestor.ingest_file(
-            event.src_path
-        )
+        try:
+            result = self.ingestor.ingest_file(
+                event.src_path
+            )
 
-        print(
-            f"Status: {result['status']}"
-        )
+            print(
+                f"Status: {result['status']}"
+            )
 
-        print(
-            f"Chunks Added: {result['chunks']}"
-        )
+            print(
+                f"Chunks Added: {result['chunks']}"
+            )
+
+        except Exception as error:
+            print(
+                f"Error indexing file: {error}"
+            )
 
     def on_modified(self, event):
         if event.is_directory:
@@ -56,17 +62,23 @@ class DocumentEventHandler(FileSystemEventHandler):
             f"{event.src_path}"
         )
 
-        result = self.ingestor.ingest_file(
-            event.src_path
-        )
+        try:
+            result = self.ingestor.ingest_file(
+                event.src_path
+            )
 
-        print(
-            f"Status: {result['status']}"
-        )
+            print(
+                f"Status: {result['status']}"
+            )
 
-        print(
-            f"Chunks Added: {result['chunks']}"
-        )
+            print(
+                f"Chunks Added: {result['chunks']}"
+            )
+
+        except Exception as error:
+            print(
+                f"Error indexing file: {error}"
+            )
 
     def on_deleted(self, event):
         if event.is_directory:
@@ -80,17 +92,29 @@ class DocumentEventHandler(FileSystemEventHandler):
             f"{event.src_path}"
         )
 
-        document_id = self.ingestor.processor.generate_document_id(
-            event.src_path
+        document_id = (
+            self.ingestor.processor.generate_document_id(
+                event.src_path
+            )
         )
 
         self.ingestor.store.delete_document(
             document_id
         )
 
-        print("Document removed from vector database.")
+        print(
+            "Document removed from vector database."
+        )
+
+
 def start_watcher():
     ingestor = DocumentIngestor()
+
+    if not ingestor.approved_folders:
+        print(
+            "No valid approved folders found."
+        )
+        return
 
     event_handler = DocumentEventHandler(
         ingestor
@@ -98,17 +122,22 @@ def start_watcher():
 
     observer = Observer()
 
-    observer.schedule(
-        event_handler,
-        path=str(ingestor.upload_folder),
-        recursive=True
-    )
+    for folder in ingestor.approved_folders:
+
+        observer.schedule(
+            event_handler,
+            path=str(folder),
+            recursive=True
+        )
+
+        print(
+            f"Watching folder: {folder}"
+        )
 
     observer.start()
 
     print(
-        f"Watching folder: "
-        f"{ingestor.upload_folder.resolve()}"
+        "\nFile watcher started."
     )
 
     print(

@@ -20,6 +20,7 @@ data/chroma/
 # Local User Data
 data/memory.json
 data/profile.json
+config/folders.json
 
 # Uploaded Files
 uploads/
