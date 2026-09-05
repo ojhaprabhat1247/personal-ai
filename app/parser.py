@@ -8,17 +8,22 @@ class DocumentParser:
 
     @staticmethod
     def read_pdf(file_path):
-        text = ""
+        pages = []
 
         reader = PdfReader(file_path)
 
-        for page in reader.pages:
+        for page_number, page in enumerate(reader.pages, start=1):
             page_text = page.extract_text()
 
-            if page_text:
-                text += page_text + "\n"
+            if page_text and page_text.strip():
+                pages.append(
+                    {
+                        "page_number": page_number,
+                        "text": page_text.strip()
+                    }
+                )
 
-        return text.strip()
+        return pages
 
     @staticmethod
     def read_docx(file_path):
@@ -28,14 +33,26 @@ class DocumentParser:
 
         for paragraph in document.paragraphs:
             if paragraph.text.strip():
-                paragraphs.append(paragraph.text)
+                paragraphs.append(paragraph.text.strip())
 
-        return "\n".join(paragraphs)
+        return [
+            {
+                "page_number": None,
+                "text": "\n".join(paragraphs)
+            }
+        ]
 
     @staticmethod
     def read_txt(file_path):
         with open(file_path, "r", encoding="utf-8") as file:
-            return file.read()
+            text = file.read()
+
+        return [
+            {
+                "page_number": None,
+                "text": text
+            }
+        ]
 
     @staticmethod
     def parse(file_path):
