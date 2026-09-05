@@ -1,13 +1,11 @@
 from document_rag import DocumentRAG
 
-
 rag = DocumentRAG(
-    n_results=5
+    n_results=8
 )
 
 question = (
-    "What subnet mask is used when "
-    "the company needs six subnets?"
+    "What does Retrieval-Augmented Generation combine?"
 )
 
 print("QUESTION:")
