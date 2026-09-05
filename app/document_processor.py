@@ -1,5 +1,5 @@
 from pathlib import Path
-import uuid
+import hashlib
 
 from parser import DocumentParser
 from chunking import DocumentChunker
@@ -17,12 +17,35 @@ class DocumentProcessor:
             chunk_overlap=chunk_overlap
         )
 
+    @staticmethod
+    def generate_file_hash(file_path):
+
+        sha256 = hashlib.sha256()
+
+        with open(file_path, "rb") as file:
+
+            while True:
+                data = file.read(1024 * 1024)
+
+                if not data:
+                    break
+
+                sha256.update(data)
+
+        return sha256.hexdigest()
+
     def process(self, file_path):
 
         file_path = Path(file_path)
 
-        document_id = str(uuid.uuid4())
         filename = file_path.name
+
+        file_hash = self.generate_file_hash(file_path)
+
+        # Stable ID for this file path.
+        document_id = hashlib.sha256(
+            str(file_path.resolve()).encode("utf-8")
+        ).hexdigest()
 
         pages = DocumentParser.parse(file_path)
 
@@ -39,7 +62,12 @@ class DocumentProcessor:
             )
 
             for chunk in page_chunks:
-                chunk["metadata"]["chunk_index"] = global_chunk_index
+
+                chunk["metadata"]["chunk_index"] = (
+                    global_chunk_index
+                )
+
+                chunk["metadata"]["file_hash"] = file_hash
 
                 all_chunks.append(chunk)
 
@@ -48,6 +76,7 @@ class DocumentProcessor:
         return {
             "document_id": document_id,
             "filename": filename,
+            "file_hash": file_hash,
             "total_pages": len(pages),
             "total_chunks": len(all_chunks),
             "chunks": all_chunks
