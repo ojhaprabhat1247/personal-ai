@@ -18,6 +18,14 @@ class DocumentProcessor:
         )
 
     @staticmethod
+    def generate_document_id(file_path):
+        file_path = Path(file_path)
+
+        return hashlib.sha256(
+            str(file_path.resolve()).encode("utf-8")
+        ).hexdigest()
+
+    @staticmethod
     def generate_file_hash(file_path):
 
         sha256 = hashlib.sha256()
@@ -43,9 +51,9 @@ class DocumentProcessor:
         file_hash = self.generate_file_hash(file_path)
 
         # Stable ID for this file path.
-        document_id = hashlib.sha256(
-            str(file_path.resolve()).encode("utf-8")
-        ).hexdigest()
+        document_id = self.generate_document_id(
+         file_path
+            )
 
         pages = DocumentParser.parse(file_path)
 

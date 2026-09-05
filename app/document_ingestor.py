@@ -6,11 +6,7 @@ from document_store import DocumentStore
 
 class DocumentIngestor:
 
-    SUPPORTED_EXTENSIONS = {
-        ".pdf",
-        ".docx",
-        ".txt"
-    }
+    SUPPORTED_EXTENSIONS = {".pdf", ".docx", ".txt"}
 
     def __init__(self, upload_folder="uploads"):
         self.upload_folder = Path(upload_folder)
@@ -23,11 +19,10 @@ class DocumentIngestor:
 
         files = []
 
-        for file_path in self.upload_folder.iterdir():
+        for file_path in self.upload_folder.rglob("*"):
             if (
                 file_path.is_file()
-                and file_path.suffix.lower()
-                in self.SUPPORTED_EXTENSIONS
+                and file_path.suffix.lower() in self.SUPPORTED_EXTENSIONS
             ):
                 files.append(file_path)
 
@@ -41,7 +36,7 @@ class DocumentIngestor:
         return {
             "filename": document["filename"],
             "status": result["status"],
-            "chunks": result["chunks"]
+            "chunks": result["chunks"],
         }
 
     def ingest_all(self):
@@ -55,11 +50,13 @@ class DocumentIngestor:
                 results.append(result)
 
             except Exception as error:
-                results.append({
-                    "filename": file_path.name,
-                    "status": "error",
-                    "chunks": 0,
-                    "error": str(error)
-                })
+                results.append(
+                    {
+                        "filename": file_path.name,
+                        "status": "error",
+                        "chunks": 0,
+                        "error": str(error),
+                    }
+                )
 
         return results
