@@ -116,6 +116,31 @@ def start_watcher():
         )
         return
 
+    
+    print("\nSynchronizing existing documents...")
+
+    sync_results = ingestor.ingest_all()
+
+    if not sync_results:
+        print("No supported documents found.")
+
+    else:
+        for result in sync_results:
+            print(
+                f"{result['filename']}: "
+                f"{result['status']}"
+            )
+
+            if result["status"] == "error":
+                print(
+                    f"Error: {result['error']}"
+                )
+
+    print(
+        f"Total document chunks: "
+        f"{ingestor.store.count()}"
+    )
+    
     event_handler = DocumentEventHandler(
         ingestor
     )
