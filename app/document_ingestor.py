@@ -8,10 +8,12 @@ from folder_config import FolderConfig
 class DocumentIngestor:
 
     SUPPORTED_EXTENSIONS = {
-        ".pdf",
-        ".docx",
-        ".txt"
-    }
+    ".pdf",
+    ".docx",
+    ".txt",
+    ".xlsx",
+    ".csv"
+     }
 
     def __init__(self):
         self.processor = DocumentProcessor()
