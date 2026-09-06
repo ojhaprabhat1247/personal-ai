@@ -106,6 +106,63 @@ class DocumentEventHandler(FileSystemEventHandler):
             "Document removed from vector database."
         )
 
+    def on_moved(self, event):
+        if event.is_directory:
+            return
+
+        old_path = Path(event.src_path)
+        new_path = Path(event.dest_path)
+
+        old_supported = self.is_supported(old_path)
+        new_supported = self.is_supported(new_path)
+
+        if not old_supported and not new_supported:
+            return
+
+        print(
+            f"\nFile moved or renamed:\n"
+            f"From: {old_path}\n"
+            f"To:   {new_path}"
+        )
+
+        if old_supported:
+            old_document_id = (
+                self.ingestor.processor.generate_document_id(
+                    old_path
+                )
+            )
+
+            self.ingestor.store.delete_document(
+                old_document_id
+            )
+
+            print(
+                "Old document removed from vector database."
+            )
+
+        if new_supported:
+            try:
+                result = self.ingestor.ingest_file(
+                    new_path
+                )
+
+                print(
+                    f"Status: {result['status']}"
+                )
+
+                print(
+                    f"Chunks Added: {result['chunks']}"
+                )
+
+            except PermissionError:
+                print(
+                    "New location is outside approved folders."
+                )
+
+            except Exception as error:
+                print(
+                    f"Error indexing moved file: {error}"
+                )
 
 def start_watcher():
     ingestor = DocumentIngestor()

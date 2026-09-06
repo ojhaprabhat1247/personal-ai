@@ -27,9 +27,7 @@ class DocumentIngestor:
         files = []
 
         for folder in self.approved_folders:
-
             for file_path in folder.rglob("*"):
-
                 if (
                     file_path.is_file()
                     and file_path.suffix.lower()
@@ -61,23 +59,51 @@ class DocumentIngestor:
         file_path = Path(file_path).resolve()
 
         for folder in self.approved_folders:
-
             try:
                 file_path.relative_to(folder)
                 return True
-
             except ValueError:
                 continue
 
         return False
 
+    def remove_stale_documents(self):
+        indexed_documents = (
+            self.store.get_all_documents()
+        )
+
+        removed = []
+
+        for document_id, source_path in (
+            indexed_documents.items()
+        ):
+            file_path = Path(source_path)
+
+            if not file_path.exists():
+                self.store.delete_document(
+                    document_id
+                )
+
+                removed.append(source_path)
+                continue
+
+            if not self.is_file_approved(file_path):
+                self.store.delete_document(
+                    document_id
+                )
+
+                removed.append(source_path)
+
+        return removed
+
     def ingest_all(self):
+        self.remove_stale_documents()
+
         files = self.get_supported_files()
 
         results = []
 
         for file_path in files:
-
             try:
                 result = self.ingest_file(file_path)
                 results.append(result)

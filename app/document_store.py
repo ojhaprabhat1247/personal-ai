@@ -31,6 +31,27 @@ class DocumentStore:
             }
         )
 
+
+    def get_all_documents(self):
+        results = self.collection.get(
+            include=["metadatas"]
+        )
+
+        documents = {}
+
+        for metadata in results["metadatas"]:
+
+            if not metadata:
+                continue
+
+            document_id = metadata.get("document_id")
+            source_path = metadata.get("source_path")
+
+            if document_id and source_path:
+                documents[document_id] = source_path
+
+        return documents
+    
     def add_document(self, document):
 
         document_id = document["document_id"]

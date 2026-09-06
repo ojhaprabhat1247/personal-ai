@@ -44,7 +44,7 @@ class DocumentProcessor:
 
     def process(self, file_path):
 
-        file_path = Path(file_path)
+        file_path = Path(file_path).resolve()
 
         filename = file_path.name
 
@@ -76,6 +76,8 @@ class DocumentProcessor:
                 )
 
                 chunk["metadata"]["file_hash"] = file_hash
+                
+                chunk["metadata"]["source_path"] = str(file_path)
 
                 all_chunks.append(chunk)
 
