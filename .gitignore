@@ -31,3 +31,8 @@ uploads/
 # Operating System Files
 .DS_Store
 Thumbs.db
+# OCR Virtual Environment
+.venv-ocr/
+
+# GPU OCR Virtual Environment
+.venv-ocr-gpu/
