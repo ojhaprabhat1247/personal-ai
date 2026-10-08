@@ -7,6 +7,9 @@
     "dev": "vite",
     "build": "vite build",
     "lint": "oxlint",
+    "test": "npm run test:stream && npm run test:ui",
+    "test:stream": "node --test src/chatTransport.test.js",
+    "test:ui": "vitest run src/App.test.jsx --environment jsdom",
     "preview": "vite preview"
   },
   "dependencies": {
@@ -17,7 +20,9 @@
     "@types/react": "^19.2.18",
     "@types/react-dom": "^19.2.7",
     "@vitejs/plugin-react": "^6.1.1",
+    "jsdom": "^29.1.1",
     "oxlint": "^1.81.0",
-    "vite": "^8.3.0"
+    "vite": "^8.3.0",
+    "vitest": "^4.1.11"
   }
 }

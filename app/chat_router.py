@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 from enum import Enum
+import logging
 
 import llm
 
@@ -7,6 +8,26 @@ from cloud_llm import (
     CloudLLM,
     CloudLLMConfig,
 )
+
+logger = logging.getLogger(__name__)
+
+
+def close_stream(stream):
+    close = getattr(stream, "close", None)
+    if close is not None:
+        close()
+
+
+def completed_chunks(stream):
+    """EOF without a provider terminal marker is an interrupted response."""
+    try:
+        for chunk in stream:
+            yield chunk
+            if chunk.get("done", False):
+                return
+        raise RuntimeError("Generation stream ended before completion.")
+    finally:
+        close_stream(stream)
 
 
 class PrivacyMode(str, Enum):
@@ -88,6 +109,9 @@ class ChatRouter:
         self,
         request: ChatRoutingRequest
     ):
+        if request.stream:
+            return self._generate_stream(request)
+
         target = self.select_target(
             request
         )
@@ -103,17 +127,32 @@ class ChatRouter:
                 stream=request.stream
             )
 
-        except Exception as error:
-
-            print(
-                "\n⚠️ Cloud unavailable. "
-                "Falling back to local."
-            )
-
-            print(
-                f"Reason: {error}"
-            )
+        except Exception:
+            logger.warning("Cloud unavailable; falling back to local.")
 
             return self.generate_local(
                 request
             )
+
+    def _generate_stream(self, request):
+        if self.select_target(request) == ExecutionTarget.LOCAL:
+            yield from completed_chunks(self.generate_local(request))
+            return
+
+        emitted_text = False
+        try:
+            stream = completed_chunks(
+                self.cloud.generate(messages=request.messages, stream=True)
+            )
+            try:
+                for chunk in stream:
+                    if chunk["message"]["content"]:
+                        emitted_text = True
+                    yield chunk
+            finally:
+                close_stream(stream)
+        except Exception:
+            if emitted_text:
+                raise
+            logger.warning("Cloud stream unavailable; falling back to local.")
+            yield from completed_chunks(self.generate_local(request))

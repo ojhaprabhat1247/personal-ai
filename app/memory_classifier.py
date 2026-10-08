@@ -1,13 +1,10 @@
 import json
-from ollama import chat
-
-MODEL = "llama3.2"
+import llm
 
 
 def classify(text):
 
-    response = chat(
-        model=MODEL,
+    response = llm.generate(
         messages=[
             {
                 "role": "system",

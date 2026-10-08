@@ -1,25 +1,16 @@
 import json
+import os
+from pathlib import Path
 import string
+from tempfile import NamedTemporaryFile
+from chat_prompts import CHAT_SYSTEM_PROMPT
+
+MEMORY_PATH = Path("data/memory.json")
+
 messages = [
     {
         "role": "system",
-        "content": """
-You are a helpful AI assistant.
-
-Rules:
-- Default answer should be short (2-5 lines).
-- Answer directly.
-Language Rules:
-
-- If the user writes in English, ALWAYS reply in English.
-- If the user writes in Hindi, reply in Hindi.
-- If the user writes in Hinglish, reply in Hinglish.
-- Never change the user's language unless explicitly asked.
-- If the user asks for details, then explain in detail.
-- If the user asks for code, write clean code.
-- Never add unnecessary examples.
-- Never repeat information.
-"""
+        "content": CHAT_SYSTEM_PROMPT
     }
 ]
 
@@ -36,17 +27,39 @@ def load_memory():
     global messages
 
     try:
-        with open("data/memory.json", "r",encoding="utf-8") as file:
+        with MEMORY_PATH.open("r", encoding="utf-8") as file:
             old_messages = json.load(file)
 
         messages.extend(old_messages)
 
     except FileNotFoundError:
         print("⚠️ No previous memory found.")
+def _write_history(history):
+    """Replace the history file atomically; failed writes keep the old history."""
+    temporary_path = None
+    try:
+        with NamedTemporaryFile(
+            mode="w", encoding="utf-8", dir=MEMORY_PATH.parent,
+            prefix="memory-", suffix=".tmp", delete=False,
+        ) as file:
+            temporary_path = Path(file.name)
+            json.dump(history, file, indent=4, ensure_ascii=False)
+        os.replace(temporary_path, MEMORY_PATH)
+    finally:
+        if temporary_path is not None:
+            temporary_path.unlink(missing_ok=True)
+
+
 def save_memory():
-    with open("data/memory.json", "w",encoding="utf-8") as file:
-        json.dump(messages[1:], file, indent=4,ensure_ascii=False)
-        
+    _write_history(messages[1:])
+
+
+def reset_chat():
+    """Reset only conversational history, preserving the shared base instructions."""
+    _write_history([])
+    # Only change in-process context after persistence succeeds.
+    messages[:] = [{"role": "system", "content": CHAT_SYSTEM_PROMPT}]
+
 
 
 def get_context(profile_text, relevant_memory):

@@ -131,10 +131,66 @@ ollama pull nomic-embed-text
 
 ## Required Ollama Models
 
+The chat model defaults to `llama3.2`. Set `PERSONAL_AI_MODEL` before starting
+the backend or CLI to use another installed Ollama chat model. This configures
+the local provider resource; the four privacy policies remain routing policies.
+
 | Model | Purpose |
 |---|---|
 | `llama3.2` | Local language model |
 | `nomic-embed-text` | Text embeddings for semantic search |
+
+---
+
+## Chat Prototype
+
+From the repository root, run the backend with the project's Python environment:
+
+```powershell
+.\.venv\Scripts\python.exe -m uvicorn api:app --app-dir app --host 127.0.0.1 --port 8000
+```
+
+Run `npm install` and `npm run dev` from `frontend` for the React UI. The frontend
+uses `http://127.0.0.1:8000` by default; `VITE_API_BASE_URL` can override it.
+The CLI remains available through `python app/main.py` from the repository root.
+
+Both `POST /chat` and `POST /chat/stream` accept `message` and optional
+`privacy_mode` (`auto`, `privacy_first`, `local_only`, `max_quality`). `/chat`
+retains its JSON response. `/chat/stream` sends SSE frames over a POST fetch:
+
+- `delta`: `{ "text": "..." }`
+- `done`: `{ "privacy_mode": "auto", "sensitive": false, "sensitivity_reasons": [] }`
+- `error`: `{ "code": "generation_failed", "message": "..." }`
+
+A stream succeeds only on `done`. Partial output is not saved as a completed
+turn, and fallback never appends a second provider's answer after visible text.
+Provider streams use the existing Ollama-shaped chunks, including a terminal
+`done: true` marker; future adapters should preserve that contract.
+
+This remains one shared conversation history per backend process. Turns are
+serialized; refreshing the browser clears its visible transcript but does not
+clear persisted history. **New Chat** calls `POST /chat/reset`, which resets only
+the active conversation and its saved history, retaining the base instructions.
+It preserves profile, long-term semantic memory, indexed documents, Chroma data,
+and approved-folder settings. The UI resets only after the backend confirms
+success; a failed reset retains the transcript and shows an error. All browser
+tabs connected to this single-process prototype share the same backend history.
+Run one backend worker; independent CLI/backend processes do not synchronize
+their in-memory histories.
+
+Disconnect cleanup can wait for an outstanding synchronous operation. Local
+chat-model reads time out after 120 seconds without data. Response quality and
+language/length compliance remain model-dependent even with a fresh chat.
+
+Focused checks (fake providers/storage; no real memory or Chroma writes):
+
+```powershell
+.\.venv\Scripts\python.exe -m unittest discover -s tests -p test_chat.py -v
+cd frontend
+npm test
+npm run lint
+npm run build
+```
 
 ---
 
